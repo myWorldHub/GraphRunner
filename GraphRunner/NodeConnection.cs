@@ -14,5 +14,10 @@ namespace GraphRunner
         public int GraphId { get; set; }
         public int Type { get; set; }
         public int Index { get; set; }
+
+        public override string ToString()
+        {
+            return GraphId+"."+Type+"."+Index;
+        }
     }
 }
