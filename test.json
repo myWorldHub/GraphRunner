@@ -1,13 +1,56 @@
 {
     "Graphs" : [
         {
-            "Id": "1",
+            "Id": 1,
             "Type": "Updater",
             "Setting":{
                 "Time": "1"
             }
+        },
+        {
+            "Id": 2,
+            "Type": "PrintText"
+        },
+        {
+            "Id": 3,
+            "Type": "Value",
+            "Setting":{
+                "Type": "Int",
+                "Value": "1"
+            }
         }
     ],
-    "Connections": [],
-    "Executions": []
+    "Connections": [
+        {
+            "Connect": true,
+            "From": {
+                "GraphId": 1,
+                "Type": 1,
+                "Index": 0
+            },
+            "To": {
+                "GraphId": 2,
+                "Type": 0,
+                "Index": 0
+            }
+        },
+        {
+            "Connect": true,
+            "From": {
+                "GraphId": 2,
+                "Type": 3,
+                "Index": 0
+            },
+            "To": {
+                "GraphId": 3,
+                "Type": 4,
+                "Index": 0
+            }
+        }
+    ],
+    "Executions": [
+        {
+            "GraphId": 1
+        }
+    ]
 }
