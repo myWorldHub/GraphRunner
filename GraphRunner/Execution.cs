@@ -4,6 +4,6 @@ namespace GraphRunner
 {
     public class Execution
     {
-        public string GraphId { get; set; }
+        public int GraphId { get; set; }
     }
 }

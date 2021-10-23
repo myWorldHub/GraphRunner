@@ -42,7 +42,7 @@ namespace GraphRunner
             a.Executions = new List<Execution>();
 
             a.Graphs.Add(new GraphSetting());
-            a.Graphs[0].Id = "1";
+            a.Graphs[0].Id = 1;
             a.Graphs[0].Type = "Updater";
             a.Graphs[0].Setting = new Dictionary<string, string>();
 
