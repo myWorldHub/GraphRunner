@@ -16,7 +16,7 @@
             "Type": "Value",
             "Setting":{
                 "Type": "Int",
-                "Value": "1"
+                "Value": "1099"
             }
         }
     ],
@@ -38,12 +38,12 @@
             "Connect": true,
             "From": {
                 "GraphId": 2,
-                "Type": 3,
+                "Type": 2,
                 "Index": 0
             },
             "To": {
                 "GraphId": 3,
-                "Type": 4,
+                "Type": 3,
                 "Index": 0
             }
         }
