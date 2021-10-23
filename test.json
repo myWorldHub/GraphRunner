@@ -1,5 +1,13 @@
 {
-    "Graphs" : {},
+    "Graphs" : [
+        {
+            "Id": "1",
+            "Type": "Updater",
+            "Setting":{
+                "Time": "1"
+            }
+        }
+    ],
     "Connections": [],
     "Executions": []
 }
