@@ -100,10 +100,7 @@ namespace GraphRunner
                 IGraph graph = graphs[setting.GraphId];
                 if (graph is UpdaterGraph updater)
                 {
-                    for (int i = 0; i < 10000; i++)
-                    {
-                        await updater.Update(0);
-                    }
+                    await updater.Update(0);
                 }
                 else{
                     throw new ArgumentException($"Graph <{setting.GraphId}> is not UpdaterGraph.");
