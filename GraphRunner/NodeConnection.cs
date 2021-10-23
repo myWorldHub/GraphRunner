@@ -4,14 +4,14 @@ namespace GraphRunner
 {
     public class NodeConnection
     {
-        public bool Connect;
-        public Tuple<NodeInfo, NodeInfo> Pair;
+        public bool Connect { get; set; }
+        public Tuple<NodeInfo, NodeInfo> Pair { get; set; }
     }
-    
+
     public class NodeInfo
     {
-        public string GraphId;
-        public int Type;
-        public int Index;
+        public string GraphId { get; set; }
+        public int Type { get; set; }
+        public int Index { get; set; }
     }
 }

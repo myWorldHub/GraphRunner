@@ -1,11 +1,12 @@
+using System;
 using System.Collections.Generic;
 
 namespace GraphRunner
 {
     public class GraphSetting
     {
-        public string Id;
-        public string Type;
-        public IDictionary<string,string> Setting;
+        public string Id { get; set; }
+        public string Type { get; set; }
+        public IDictionary<string,string> Setting { get; set; }
     }
 }
