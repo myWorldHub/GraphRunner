@@ -25,7 +25,16 @@ namespace GraphRunner
 
             var sw = new System.Diagnostics.Stopwatch();
             
+            sw.Start();
             Execute(args[0]);
+            sw.Stop();
+            
+            // 結果表示
+            Console.WriteLine("Time");
+            TimeSpan ts = sw.Elapsed;
+            Console.WriteLine($"　{ts}");
+            Console.WriteLine($"　{ts.Hours}時間 {ts.Minutes}分 {ts.Seconds}秒 {ts.Milliseconds}ミリ秒");
+            Console.WriteLine($"　{sw.ElapsedMilliseconds}ミリ秒");
         }
 
         static async void Execute(string filePath)
