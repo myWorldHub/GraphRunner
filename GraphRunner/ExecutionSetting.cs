@@ -4,7 +4,7 @@ namespace GraphRunner
 {
     public class ExecutionSetting
     {
-        public IDictionary<string,GraphSetting> Graphs;
+        public IList<GraphSetting> Graphs;
 
         public IList<NodeConnection> Connections;
 
