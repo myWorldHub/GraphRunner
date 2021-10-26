@@ -1,5 +1,3 @@
-using System;
-
 namespace GraphRunner
 {
     public class Execution

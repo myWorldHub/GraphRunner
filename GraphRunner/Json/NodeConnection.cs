@@ -1,5 +1,3 @@
-using System;
-
 namespace GraphRunner
 {
     public class NodeConnection
@@ -19,5 +17,13 @@ namespace GraphRunner
         {
             return GraphId+"."+Type+"."+Index;
         }
+    }
+
+    public enum NodeType
+    {
+        InProcess,
+        OutProcess,
+        InItem,
+        OutItem
     }
 }
