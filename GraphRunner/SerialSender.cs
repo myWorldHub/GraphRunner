@@ -1,21 +1,20 @@
 using System.Threading;
 using System.Threading.Tasks;
 using GraphConnectEngine;
-using GraphConnectEngine.Graphs.Event;
 
 namespace GraphRunner
 {
-    public class SerialSender : IProcessSender
+    public class SerialSender
     {
         private SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1);
         
-        public async Task Fire(IGraph graph, object[] parameters)
+        public async Task Fire(ProcessCallArgs args,IGraph graph)
         {
             await _semaphoreSlim.WaitAsync();
 
             try
             {
-                await graph.InvokeWithoutArgs(true, parameters);
+                await graph.InvokeWithoutCheck(args,true,null);
             }
             finally
             {

@@ -1,4 +1,4 @@
-namespace GraphRunner
+namespace GraphRunner.Json
 {
     public class NodeConnection
     {
@@ -17,6 +17,22 @@ namespace GraphRunner
         {
             return GraphId+"."+Type+"."+Index;
         }
+
+        public NodeType GetNodeType()
+        {
+            switch (Type)
+            {
+                case 0:
+                    return NodeType.InProcess;
+                case 1:
+                    return NodeType.OutProcess;
+                case 2:
+                    return NodeType.InItem;
+                case 3:
+                    return NodeType.OutItem;
+            }
+            return NodeType.Undefined;
+        }
     }
 
     public enum NodeType
@@ -24,6 +40,7 @@ namespace GraphRunner
         InProcess,
         OutProcess,
         InItem,
-        OutItem
+        OutItem,
+        Undefined
     }
 }

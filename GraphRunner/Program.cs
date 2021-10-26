@@ -3,22 +3,23 @@ using System.Data;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
+using GraphRunner.Json;
 
 namespace GraphRunner
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             if (args.Length != 1)
             {
                 Console.WriteLine("Usage : GraphRunner [FilePath]");
                 return;
             }
-            Execute(args[0]);
+            await Execute(args[0]);
         }
 
-        static async void Execute(string filePath)
+        static async Task Execute(string filePath)
         {
             var json = JsonSerializer.Deserialize<ExecutionSetting>(await File.ReadAllTextAsync(filePath));
 
@@ -32,7 +33,7 @@ namespace GraphRunner
 
             foreach (var setting in json.Graphs)
             {
-                if (!env.CreateGraph(setting))
+                if (!env.AddGraph(setting))
                 {
                     throw new EvaluateException($"Failed to instantiate graph : id {setting.Id}.");
                 }
@@ -49,7 +50,7 @@ namespace GraphRunner
 
             foreach (var setting in json.Executions)
             {
-                env.Execute(setting);
+                await env.Execute(setting);
             }
 
         }
