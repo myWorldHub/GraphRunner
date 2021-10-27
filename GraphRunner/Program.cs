@@ -296,7 +296,7 @@ namespace GraphRunner
 
             if (env.ConnectNode(setting))
             {
-                logger.WriteLine($"Ok. {(connect ? "Connected" : "Diconnected")} graph.");
+                logger.WriteLine($"Ok. {(connect ? "Connected" : "Disconnected")} graph.");
             }
             else
             {
