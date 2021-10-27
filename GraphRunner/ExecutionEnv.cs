@@ -152,23 +152,43 @@ namespace GraphRunner
                 HttpListenerRequest request = context.Request;
 
                 if (request.Url == null)
+                {
+                    var res = context.Response;
+                    res.StatusCode = 400;
+                    res.Close();
                     continue;
+                }
 
                 var path = request.Url.LocalPath;
 
                 if (!_path2execution.ContainsKey(path))
+                {
+                    var res = context.Response;
+                    res.StatusCode = 404;
+                    res.Close();
                     continue;
+                }
 
                 var exec = _path2execution[path];
-                
-                if(!_graphs.ContainsKey(exec.GraphId))
+
+                if (!_graphs.ContainsKey(exec.GraphId))
+                {
+                    var res = context.Response;
+                    res.StatusCode = 500;
+                    res.Close();
                     continue;
+                }
 
                 if (!(_graphs[exec.GraphId] is MyUpdateGraph updater))
+                {
+                    var res = context.Response;
+                    res.StatusCode = 500;
+                    res.Close();
                     continue;
+                }
                 
                 // Obtain a response object.
-                HttpListenerResponse response = context.Response;
+                var response = context.Response;
                 System.IO.Stream output = response.OutputStream;
                 
                 ListenExec(output, response, updater);
