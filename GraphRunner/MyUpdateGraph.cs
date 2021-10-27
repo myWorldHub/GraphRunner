@@ -19,14 +19,8 @@ namespace GraphRunner
             return Task.FromResult(ProcessCallResult.Success(null,OutProcessNodes[0]));
         }
 
-        public async Task Execute()
+        public async Task Execute(Func<string, Task<bool>> func)
         {
-            Func<string,Task<bool>> func = async (msg) =>
-            {
-                Console.WriteLine(msg);
-                return true;
-            };
-
             var args = ProcessCallArgs.Fire(this);
             args.SetDummyData("PrintMessageFunc",func);
             

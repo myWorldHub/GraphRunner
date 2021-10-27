@@ -32,7 +32,7 @@ namespace GraphRunner
                     return;
                 }
 
-                await Execute(args[1]);
+                await Execute(args[1],true);
             }
             else if (args[0] == "i" || args[0] == "interactive")
             {
@@ -44,11 +44,8 @@ namespace GraphRunner
             }
         }
 
-        static async Task<ExecutionEnv> Execute(string filePath)
+        static async Task<ExecutionEnv> Execute(string filePath,bool waitForServer)
         {
-            //TODO 設定変更モード
-            //TODO サーバーモード
-            
             var json = JsonSerializer.Deserialize<ExecutionSetting>(await File.ReadAllTextAsync(filePath));
 
             if (json == null)
@@ -77,7 +74,35 @@ namespace GraphRunner
 
             foreach (var setting in json.Executions)
             {
-                await env.Execute(setting);
+                await env.Execute(setting,PrintText);
+            }
+
+            if (json.Server != null)
+            {
+                var result = env.StartServer(json.Server.Port);
+
+                if (!result)
+                {
+                    Console.WriteLine("Failed to start server.");   
+                }
+                
+                foreach (var setting in json.Server.Bindings)
+                {
+                    env.AddPath(setting);
+                }
+
+                if (waitForServer)
+                {
+                    while (true)
+                    {
+                        var input = Console.ReadLine();
+                        if (string.IsNullOrEmpty(input)) continue;
+                        if (input == "quit")
+                        {
+                            break;
+                        }
+                    }
+                }
             }
 
             return env;
@@ -85,14 +110,12 @@ namespace GraphRunner
 
         private static async Task StartInteractive(ILogger logger,string[] mainArgs)
         {
-            //TODO　argsでサーバーのポート指定
-            
             if (mainArgs.Length >= 2)
             {
                 logger.WriteLine("Loading {0}", mainArgs[1]);
             }
 
-            ExecutionEnv env = mainArgs.Length >= 2 ? await Execute(mainArgs[1]) : new ExecutionEnv();
+            ExecutionEnv env = mainArgs.Length >= 2 ? await Execute(mainArgs[1],false) : new ExecutionEnv();
 
             while (true)
             {
@@ -111,8 +134,7 @@ namespace GraphRunner
                                      "removegraph/rg : remove graph\n" +
                                      "connect/c : connect node\n" +
                                      "disconnect/d : disconnect node\n" +
-                                     "exec/e : start execution\n" +
-                                     "bind/b : bind graph execution to server");
+                                     "exec/e : start execution");
                 }
                 else if (args[0] == "q" || args[0] == "quit")
                 {
@@ -210,7 +232,12 @@ namespace GraphRunner
                     var setting = new Execution();
                     setting.GraphId = id;
 
-                    var result = await env.Execute(setting);
+                    var result = await env.Execute(setting, async (msg) =>
+                    {
+                        await PrintText(msg);
+                        return true;
+                    });
+                    
                     if (result)
                     {
                         logger.WriteLine($"OK. Executed graph {id}.");
@@ -219,10 +246,6 @@ namespace GraphRunner
                     {
                         logger.WriteLine("Execution failed. Something went wrong.");
                     }
-                }
-                else if (args[0] == "bind" || args[0] == "b")
-                {
-                    //TODO
                 }
                 else
                 {

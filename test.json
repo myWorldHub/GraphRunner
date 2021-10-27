@@ -52,5 +52,14 @@
         {
             "GraphId": 1
         }
-    ]
+    ],
+    "Server": {
+        "Port": 80,
+        "Bindings":[
+            {
+                "Path":"/get_zero",
+                "UpdaterId": 1
+            }
+        ]
+    }
 }

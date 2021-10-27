@@ -9,5 +9,8 @@ namespace GraphRunner.Json
         public IList<NodeConnection> Connections { get; set; }
 
         public IList<Execution> Executions { get; set; }
+
+        //optional
+        public ServerSetting Server { get; set; }
     }
 }
