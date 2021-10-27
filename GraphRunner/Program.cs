@@ -191,7 +191,22 @@ namespace GraphRunner
                 }
                 else if (args[0] == "exec" || args[0] == "e")
                 {
-                    //TODO
+                    if (args.Length != 2)
+                    {
+                        logger.WriteLine("Usage : exec id:Int");
+                        continue;
+                    }
+
+                    if (!int.TryParse(args[1], out int id))
+                    {
+                        logger.WriteLine("id : ParseError");
+                        continue;
+                    }
+
+                    var setting = new Execution();
+                    setting.GraphId = id;
+
+                    await env.Execute(setting);
                 }
                 else if (args[0] == "bind" || args[0] == "b")
                 {
