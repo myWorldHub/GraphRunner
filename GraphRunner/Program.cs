@@ -119,7 +119,7 @@ namespace GraphRunner
                 {
                     if (args.Length < 3)
                     {
-                        logger.WriteLine("creategraph id:Int GraphType setting(optional)");
+                        logger.WriteLine("Usage : creategraph id:Int GraphType setting(optional)");
                         continue;
                     }
 
@@ -150,7 +150,7 @@ namespace GraphRunner
                     var result = env.AddGraph(setting);
                     if (result)
                     {
-                        logger.WriteLine("OK. Created graph");
+                        logger.WriteLine("OK. Created graph.");
                     }
                     else
                     {
@@ -160,7 +160,26 @@ namespace GraphRunner
                 }
                 else if (args[0] == "removegraph" || args[0] == "rg")
                 {
-                    //TODO
+                    if (args.Length < 2)
+                    {
+                        logger.WriteLine("Usage : removegraph id:Int");
+                        continue;
+                    }
+                    
+                    if (!int.TryParse(args[1], out int id))
+                    {
+                        logger.WriteLine("id : ParseError");
+                        continue;
+                    }
+
+                    if (env.RemoveGraph(id))
+                    {
+                        logger.WriteLine("Ok. Removed graph.");
+                    }
+                    else
+                    {
+                        logger.WriteLine("Failed to remove graph.");
+                    }
                 }
                 else if (args[0] == "connect" || args[0] == "c")
                 {
