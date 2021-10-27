@@ -160,7 +160,7 @@ namespace GraphRunner
                 }
                 else if (args[0] == "removegraph" || args[0] == "rg")
                 {
-                    if (args.Length < 2)
+                    if (args.Length != 2)
                     {
                         logger.WriteLine("Usage : removegraph id:Int");
                         continue;
@@ -183,11 +183,11 @@ namespace GraphRunner
                 }
                 else if (args[0] == "connect" || args[0] == "c")
                 {
-                    //TODO
+                    Connect(true, logger, env, args);
                 }
                 else if (args[0] == "disconnect" || args[0] == "d")
                 {
-                    //TODO
+                    Connect(false, logger, env, args);
                 }
                 else if (args[0] == "exec" || args[0] == "e")
                 {
@@ -201,6 +201,56 @@ namespace GraphRunner
                 {
                     logger.WriteLine("Command not found.\nType help to show commands.");
                 }
+            }
+        }
+
+        public static void Connect(bool connect,ILogger logger, ExecutionEnv env,string[] args)
+        {
+            if (args.Length != 7)
+            {
+                logger.WriteLine($"Usage : {(connect ? "connect" : "disconnect")} graphId nodeType nodeIndex graph2Id nodeType nodeIndex\n" +
+                                 "NodeTypes: \n" +
+                                 "  0:InProcess\n" +
+                                 "  1:OutProcess\n" +
+                                 "  2:InItem\n" +
+                                 "  3:OutItem");
+                return;
+            }
+
+
+            if (!int.TryParse(args[1], out int id1) ||
+                !int.TryParse(args[2], out int nodeType1) ||
+                !int.TryParse(args[3], out int nodeIndex1) ||
+                !int.TryParse(args[4], out int id2) ||
+                !int.TryParse(args[5], out int nodeType2) ||
+                !int.TryParse(args[6], out int nodeIndex2))
+            {
+                logger.WriteLine("int.ParseError");
+                return;
+            }
+
+            var setting = new NodeConnection();
+            setting.Connect = connect;
+            setting.From = new NodeInfo();
+            setting.To = new NodeInfo();
+
+            setting.From.GraphId = id1;
+            setting.From.Type = nodeType1;
+            setting.From.Index = nodeIndex1;
+
+            setting.To.GraphId = id2;
+            setting.To.Type = nodeType2;
+            setting.To.Index = nodeIndex2;
+
+            //TODO エラーの詳細
+
+            if (env.ConnectNode(setting))
+            {
+                logger.WriteLine($"Ok. {(connect ? "Connected" : "Diconnected")} graph.");
+            }
+            else
+            {
+                logger.WriteLine($"Failed to {(connect ? "connect" : "disconnect")} graph.");
             }
         }
 
