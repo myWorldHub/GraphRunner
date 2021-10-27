@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
+using GraphConnectEngine;
 using GraphRunner.Json;
 
 namespace GraphRunner
@@ -13,36 +14,39 @@ namespace GraphRunner
         {
             ILogger logger = new MyLogger();
             
+            // デバッグ
+            //Logger.LogLevel = Logger.LevelDebug;
+            //Logger.SetLogMethod(msg => PrintText(msg));
+            
             if (args.Length < 1)
             {
-                logger.WriteLine("Usage : GraphRunner [run/i]");
+                logger.WriteLine("Usage : GraphRunner [run/interactive]");
                 return;
             }
 
-            switch (args[0])
+            if (args[0] == "run")
             {
-                case "run":
-                    if (args.Length < 2)
-                    {
-                        logger.WriteLine("Usage : GraphRunner run :filePath");
-                        return;
-                    }
+                if (args.Length < 2)
+                {
+                    logger.WriteLine("Usage : GraphRunner run :filePath");
+                    return;
+                }
 
-                    await Execute(args[1]);
-                    break;
-                case "i":
-                    await StartInteractive(logger,args);
-                    break;
-                default:
-                    Console.WriteLine("Usage : GraphRunner [run/i]");
-                    break;
+                await Execute(args[1]);
             }
-            
-            
+            else if (args[0] == "i" || args[0] == "interactive")
+            {
+                await StartInteractive(logger, args);
+            }
+            else
+            {
+                logger.WriteLine("Usage : GraphRunner [run/interactive]");
+            }
         }
 
         static async Task<ExecutionEnv> Execute(string filePath)
         {
+            //TODO 設定変更モード
             //TODO サーバーモード
             
             var json = JsonSerializer.Deserialize<ExecutionSetting>(await File.ReadAllTextAsync(filePath));
@@ -206,7 +210,15 @@ namespace GraphRunner
                     var setting = new Execution();
                     setting.GraphId = id;
 
-                    await env.Execute(setting);
+                    var result = await env.Execute(setting);
+                    if (result)
+                    {
+                        logger.WriteLine($"OK. Executed graph {id}.");
+                    }
+                    else
+                    {
+                        logger.WriteLine("Execution failed. Something went wrong.");
+                    }
                 }
                 else if (args[0] == "bind" || args[0] == "b")
                 {
