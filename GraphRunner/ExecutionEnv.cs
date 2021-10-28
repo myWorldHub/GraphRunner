@@ -19,6 +19,8 @@ namespace GraphRunner
         private HttpListener _httpListener;
         
         public bool IsServerRunning { get; private set; }
+        
+        public int Port { get; private set; }
 
         public ExecutionEnv()
         {
@@ -101,6 +103,7 @@ namespace GraphRunner
             if (_path2execution.ContainsKey(path))
             {
                 _path2execution.Remove(path);
+                return true;
             }
             return false;
         }
@@ -113,9 +116,24 @@ namespace GraphRunner
             }
 
             IsServerRunning = true;
+            Port = port;
+            
+            //TODO ホストを指定できるように
             SimpleListener(new []{$@"http://+:{port}/"});
             
             return true;
+        }
+
+        public bool StopServer()
+        {
+            if (IsServerRunning)
+            {
+                _httpListener?.Stop();
+                IsServerRunning = false;
+                return true;
+            }
+
+            return false;
         }
 
         // This example requires the System and System.Net namespaces.
@@ -143,7 +161,7 @@ namespace GraphRunner
             }
             
             _httpListener.Start();
-            Console.WriteLine("Started. Type \"quit\" to exit.");
+            Console.WriteLine("Started.");
             
             while (IsServerRunning)
             {

@@ -44,6 +44,7 @@ namespace GraphRunner
             }
         }
 
+        //TODO 状態表示コマンド / アクセスログ
         static async Task<ExecutionEnv> Execute(string filePath,bool waitForServer)
         {
             var json = JsonSerializer.Deserialize<ExecutionSetting>(await File.ReadAllTextAsync(filePath));
@@ -83,7 +84,7 @@ namespace GraphRunner
 
                 if (!result)
                 {
-                    Console.WriteLine("Failed to start server.");   
+                    Console.WriteLine("Failed to start server.");
                 }
                 
                 foreach (var setting in json.Server.Bindings)
@@ -93,6 +94,8 @@ namespace GraphRunner
 
                 if (waitForServer)
                 {
+                    Console.WriteLine("Type \"quit\" to exit.");
+                    
                     while (true)
                     {
                         var input = Console.ReadLine();
@@ -124,7 +127,7 @@ namespace GraphRunner
                 var input = Console.ReadLine();
                 if (string.IsNullOrEmpty(input)) continue;
                 
-                var args = input.Split();
+                var args = input.Split(" ");
 
                 if (args[0] == "h" || args[0] == "help")
                 {
@@ -134,7 +137,8 @@ namespace GraphRunner
                                      "removegraph/rg : remove graph\n" +
                                      "connect/c : connect node\n" +
                                      "disconnect/d : disconnect node\n" +
-                                     "exec/e : start execution");
+                                     "exec/e : start execution\n" +
+                                     "server/s : server command");
                 }
                 else if (args[0] == "q" || args[0] == "quit")
                 {
@@ -246,6 +250,107 @@ namespace GraphRunner
                     {
                         logger.WriteLine("Execution failed. Something went wrong.");
                     }
+                }
+                else if (args[0] == "server" || args[0] == "s")
+                {
+                    if (args.Length == 1 || args[1] == "" || args[1] == "help")
+                    {
+                        logger.WriteLine("Usage : server [help/start/stop/bind/remove]");
+                        continue;
+                    }
+
+                    if (args[1] == "start")
+                    {
+                        if (args.Length != 3)
+                        {
+                            logger.WriteLine("Usage : server start [port]");
+                            continue;
+                        }
+
+                        if (!int.TryParse(args[2], out var port))
+                        {
+                            logger.WriteLine("port : ParseError");
+                            continue;
+                        }
+                        
+                        if (env.IsServerRunning)
+                        {
+                            logger.WriteLine($"Server is already running on port {env.Port}");
+                            continue;
+                        }
+
+                        env.StartServer(port);
+                    }
+                    else if (args[1] == "stop")
+                    {
+                        if (!env.IsServerRunning)
+                        {
+                            logger.WriteLine("Server is not running.");
+                            continue;
+                        }
+
+                        if(env.StopServer())
+                        {
+                            logger.WriteLine("Successfully stopped server.");
+                        }
+                        else
+                        {
+                            logger.WriteLine("Failed to stop server.");
+                        }
+                    }
+                    else if (args[1] == "bind")
+                    {
+                        if (args.Length != 4)
+                        {
+                            logger.WriteLine("Usage : server bind [path] [updaterGraphId]");
+                            continue;
+                        }
+
+                        var path = args[2];
+                        
+                        if (!int.TryParse(args[3], out var updaterId))
+                        {
+                            logger.WriteLine("updaterId : ParseError");
+                            continue;
+                        }
+
+                        var setting = new BindSetting();
+                        setting.Path = path;
+                        setting.UpdaterId = updaterId;
+
+                        if (env.AddPath(setting))
+                        {
+                            logger.WriteLine($"OK. {path} -> Graph[{updaterId}]");
+                        }
+                        else
+                        {
+                            logger.WriteLine("Failed to bind path.");
+                        }
+                    }
+                    else if (args[1] == "remove")
+                    {
+                        if (args.Length != 3)
+                        {
+                            logger.WriteLine("Usage : server remove [path]");
+                            continue;
+                        }
+
+                        var path = args[2];
+
+                        if (env.RemovePath(path))
+                        {
+                            logger.WriteLine($"OK. Removed {path}");
+                        }
+                        else
+                        {
+                            logger.WriteLine("Failed to remove path.");
+                        }
+                    }
+                    else
+                    {
+                        logger.WriteLine("Usage : server [help/start/stop/bind/remove]");
+                    }
+
                 }
                 else
                 {
