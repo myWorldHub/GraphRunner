@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Threading.Tasks;
 using GraphConnectEngine;
@@ -119,7 +120,7 @@ namespace GraphRunner
             Port = port;
             
             //TODO ホストを指定できるように
-            SimpleListener(new []{$@"http://+:{port}/"});
+            SimpleListener(new MyLogger(),new []{$@"http://+:{port}/"});
             
             return true;
         }
@@ -137,13 +138,13 @@ namespace GraphRunner
         }
 
         // This example requires the System and System.Net namespaces.
-        private async Task SimpleListener(string[] prefixes)
+        private async Task SimpleListener(ILogger logger,string[] prefixes)
         {
-            Console.WriteLine("Starting server...");
+            logger.WriteLine("Starting server...");
             
             if (!HttpListener.IsSupported)
             {
-                Console.WriteLine("Windows XP SP2 or Server 2003 is required to use the HttpListener class.");
+                logger.WriteLine("Windows XP SP2 or Server 2003 is required to use the HttpListener class.");
                 return;
             }
 
@@ -161,19 +162,28 @@ namespace GraphRunner
             }
             
             _httpListener.Start();
-            Console.WriteLine("Started.");
+            logger.WriteLine("Started.");
             
             while (IsServerRunning)
             {
                 // Note: The GetContext method blocks while waiting for a request.
                 HttpListenerContext context = await _httpListener.GetContextAsync();
                 HttpListenerRequest request = context.Request;
+                
+                logger.WriteLine($"Access from {context.Request.RemoteEndPoint} to {request.RawUrl}");
+                
+                var sw = new Stopwatch();
+                sw.Start();
 
                 if (request.Url == null)
                 {
+                    sw.Stop();
+                    
                     var res = context.Response;
                     res.StatusCode = 400;
                     res.Close();
+                    
+                    logger.WriteLine($"Completed 404 NotFound in {sw.ElapsedMilliseconds}ms");
                     continue;
                 }
 
@@ -181,9 +191,13 @@ namespace GraphRunner
 
                 if (!_path2execution.ContainsKey(path))
                 {
+                    sw.Stop();
+
                     var res = context.Response;
                     res.StatusCode = 404;
                     res.Close();
+
+                    logger.WriteLine($"Completed 404 NotFound in {sw.ElapsedMilliseconds}ms");
                     continue;
                 }
 
@@ -191,17 +205,27 @@ namespace GraphRunner
 
                 if (!_graphs.ContainsKey(exec.GraphId))
                 {
+                    sw.Stop();
+                    
                     var res = context.Response;
                     res.StatusCode = 500;
                     res.Close();
+                    
+                    logger.WriteLine($"Completed 500 Internal Server Error in {sw.ElapsedMilliseconds}ms\n" +
+                                     $"Could not find Graph[id:{exec.GraphId}]");
                     continue;
                 }
 
                 if (!(_graphs[exec.GraphId] is MyUpdateGraph updater))
                 {
+                    sw.Stop();
+                    
                     var res = context.Response;
                     res.StatusCode = 500;
                     res.Close();
+
+                    logger.WriteLine($"Completed 500 Internal Server Error in {sw.ElapsedMilliseconds}ms" + 
+                                     $"Graph[id:{exec.GraphId}] is not Updater");
                     continue;
                 }
                 
@@ -209,11 +233,11 @@ namespace GraphRunner
                 var response = context.Response;
                 System.IO.Stream output = response.OutputStream;
                 
-                ListenExec(output, response, updater);
+                ListenExec(logger,sw,output, response, updater);
             }
         }
 
-        private async void ListenExec(System.IO.Stream stream, HttpListenerResponse response,MyUpdateGraph updater)
+        private async void ListenExec(ILogger logger,Stopwatch sw,System.IO.Stream stream, HttpListenerResponse response,MyUpdateGraph updater)
         {
             // Construct a response.
             string responseString = "";
@@ -224,11 +248,15 @@ namespace GraphRunner
                 return true;
             });
             
+            sw.Stop();
+            logger.WriteLine($"Completed 200 OK in {sw.ElapsedMilliseconds}ms");
+            
+            
             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
 
             // Get a response stream and write the response to it.
             response.ContentLength64 = buffer.Length;
-            stream.Write(buffer, 0, buffer.Length);
+            await stream.WriteAsync(buffer, 0, buffer.Length);
 
             // You must close the output stream.
             stream.Close();
