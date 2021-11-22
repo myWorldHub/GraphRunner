@@ -1,0 +1,22 @@
+{
+  "profiles": {
+    "WSL": {
+      "commandName": "WSL2",
+      "environmentVariables": {},
+      "distributionName": ""
+    },
+    "Interactive (Log)": {
+      "commandName": "Project",
+      "commandLineArgs": "i -l"
+    },
+    "Interactive": {
+      "commandName": "Project",
+      "commandLineArgs": "i"
+    },
+    "Interactive (Run File)": {
+      "commandName": "Project",
+      "commandLineArgs": "i test.json",
+      "workingDirectory": "D:\\Kanastudio\\GraphRunner"
+    }
+  }
+}

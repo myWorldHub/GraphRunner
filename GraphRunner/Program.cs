@@ -13,15 +13,25 @@ namespace GraphRunner
         static async Task Main(string[] args)
         {
             ILogger logger = new MyLogger();
-            
-            // デバッグ
-            //Logger.LogLevel = Logger.LevelDebug;
-            //Logger.SetLogMethod(msg => PrintText(msg));
-            
+         
             if (args.Length < 1)
             {
                 logger.WriteLine("Usage : GraphRunner [run/interactive]");
                 return;
+            }
+
+            for(int i=0;i<args.Length;i++)
+            {
+                if(args[i] == "-l")
+                {
+                    Logger.LogLevel = Logger.LevelDebug;
+                    Logger.SetLogMethod(msg => PrintText(msg));
+                    string[] na = new string[args.Length - 1];
+                    for(int j = 0; j < i; j++) na[j] = args[j];
+                    for (int j = i + 1; j < na.Length; j++) na[j - 1] = args[j];
+                    args = na;
+                    break;
+                }
             }
 
             if (args[0] == "run")

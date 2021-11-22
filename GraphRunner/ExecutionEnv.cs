@@ -120,7 +120,7 @@ namespace GraphRunner
             Port = port;
             
             //TODO ホストを指定できるように
-            SimpleListener(new MyLogger(),new []{$@"http://+:{port}/"});
+            SimpleListener(new MyLogger(),new []{$@"http://localhost:{port}/"});
             
             return true;
         }
@@ -129,7 +129,14 @@ namespace GraphRunner
         {
             if (IsServerRunning)
             {
-                _httpListener?.Stop();
+                try
+                {
+                    _httpListener?.Stop();
+                }
+                catch (ObjectDisposedException)
+                {
+                    
+                }
                 IsServerRunning = false;
                 return true;
             }
@@ -160,9 +167,16 @@ namespace GraphRunner
             {
                 _httpListener.Prefixes.Add(s);
             }
-            
-            _httpListener.Start();
-            logger.WriteLine("Started.");
+            try
+            {
+                _httpListener.Start();
+                logger.WriteLine("Started.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                Environment.Exit(-1);
+            }
             
             while (IsServerRunning)
             {
