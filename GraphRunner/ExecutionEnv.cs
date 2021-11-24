@@ -7,15 +7,15 @@ using System.Threading.Tasks;
 using GraphConnectEngine;
 using GraphConnectEngine.Graphs.Value;
 using GraphConnectEngine.Nodes;
-using GraphRunner.Json;
 
 namespace GraphRunner
 {
     public class ExecutionEnv : IDisposable
     {
-        private readonly IDictionary<int, IGraph> _graphs;
         private readonly INodeConnector _connector;
-        private readonly IDictionary<string, Execution> _path2execution;
+
+        private readonly IDictionary<int, IGraph> _graphs;
+        private readonly IDictionary<string, int> _path2execution;
 
         private HttpListener _httpListener;
         
@@ -27,20 +27,20 @@ namespace GraphRunner
         {
             _graphs = new Dictionary<int, IGraph>();
             _connector = new NodeConnector();
-            _path2execution = new Dictionary<string, Execution>();
+            _path2execution = new Dictionary<string, int>();
             
             IsServerRunning = false;
         }
 
-        public bool AddGraph(GraphSetting setting)
+        public bool AddGraph(int id,GraphSetting setting)
         {
-            if (_graphs.ContainsKey(setting.Id)) return false;
+            if (_graphs.ContainsKey(id)) return false;
 
             var graph = CreateGraph(setting);
 
             if (graph != null)
             {
-                _graphs[setting.Id] = graph;
+                _graphs[id] = graph;
                 return true;
             }
 
@@ -57,25 +57,25 @@ namespace GraphRunner
             return true;
         }
 
-        public bool ConnectNode(NodeConnection setting)
+        public bool ConnectNode(NodeData nodeData1,NodeData nodeData2,bool connect = true)
         {
-            var node1 = GetNode(setting.From);
-            var node2 = GetNode(setting.To);
+            var node1 = GetNode(nodeData1);
+            var node2 = GetNode(nodeData2);
 
             if (node1 == null || node2 == null)
                 return false;
 
-            return setting.Connect ? _connector.ConnectNode(node1, node2) : _connector.DisconnectNode(node1,node2);
+            return connect ? _connector.ConnectNode(node1, node2) : _connector.DisconnectNode(node1,node2);
         }
 
-        public async Task<bool> Execute(Execution setting, Func<string, Task<bool>> func)
+        public async Task<bool> Execute(int graphId, Func<string, Task<bool>> func)
         {
-            if (!_graphs.ContainsKey(setting.GraphId))
+            if (!_graphs.ContainsKey(graphId))
             {
                 return false;
             }
 
-            var graph = _graphs[setting.GraphId];
+            var graph = _graphs[graphId];
             if (graph is MyUpdateGraph updater)
             {
                 await updater.Execute(func);
@@ -85,17 +85,14 @@ namespace GraphRunner
             return false;
         }
 
-        public bool AddPath(BindSetting setting)
+        public bool AddPath(string path,int graphId)
         {
-            if (_path2execution.ContainsKey(setting.Path))
+            if (_path2execution.ContainsKey(path))
             {
                 return false;
             }
-
-            var exec = new Execution();
-            exec.GraphId = setting.UpdaterId;
             
-            _path2execution[setting.Path] = exec;
+            _path2execution[path] = graphId;
             return true;
         }
 
@@ -215,9 +212,9 @@ namespace GraphRunner
                     continue;
                 }
 
-                var exec = _path2execution[path];
+                var graphId = _path2execution[path];
 
-                if (!_graphs.ContainsKey(exec.GraphId))
+                if (!_graphs.ContainsKey(graphId))
                 {
                     sw.Stop();
                     
@@ -226,11 +223,11 @@ namespace GraphRunner
                     res.Close();
                     
                     logger.WriteLine($"Completed 500 Internal Server Error in {sw.ElapsedMilliseconds}ms\n" +
-                                     $"Could not find Graph[id:{exec.GraphId}]");
+                                     $"Could not find Graph[id:{graphId}]");
                     continue;
                 }
 
-                if (!(_graphs[exec.GraphId] is MyUpdateGraph updater))
+                if (!(_graphs[graphId] is MyUpdateGraph updater))
                 {
                     sw.Stop();
                     
@@ -239,7 +236,7 @@ namespace GraphRunner
                     res.Close();
 
                     logger.WriteLine($"Completed 500 Internal Server Error in {sw.ElapsedMilliseconds}ms" + 
-                                     $"Graph[id:{exec.GraphId}] is not Updater");
+                                     $"Graph[id:{graphId}] is not Updater");
                     continue;
                 }
                 
@@ -276,9 +273,9 @@ namespace GraphRunner
             stream.Close();
         }
 
-        public INode? GetNode(NodeInfo info)
+        public INode? GetNode(NodeData info)
         {
-            return GetNode(info.GraphId, info.GetNodeType(), info.Index);
+            return GetNode(info.GraphId, info.NodeType, info.Index);
         }
 
         public INode? GetNode(int graphId, NodeType type, int index)

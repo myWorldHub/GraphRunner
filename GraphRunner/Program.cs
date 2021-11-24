@@ -4,7 +4,6 @@ using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 using GraphConnectEngine;
-using GraphRunner.Json;
 
 namespace GraphRunner
 {
@@ -57,32 +56,60 @@ namespace GraphRunner
         //TODO 状態表示コマンド / アクセスログ
         static async Task<ExecutionEnv> Execute(string filePath,bool waitForServer)
         {
-            var json = JsonSerializer.Deserialize<ExecutionSetting>(await File.ReadAllTextAsync(filePath));
+            string fileStr;
+            try
+            {
+                fileStr = await File.ReadAllTextAsync(filePath);
+            }
+            catch(FileNotFoundException ex)
+            {
+                Console.WriteLine("File : " + filePath + " is not found.");
+                return new ExecutionEnv();
+            }
 
-            if (json == null)
+            ExecutionSetting setting;
+            try
+            {
+                setting = JsonSerializer.Deserialize<ExecutionSetting>(fileStr);
+            }
+            catch (JsonException ex)
             {
                 throw new Exception("Failed to parse json.");
+                return new ExecutionEnv();
             }
 
             var env = new ExecutionEnv();
 
-            foreach (var setting in json.Graphs)
+            if (setting.Graphs != null)
             {
-                if (!env.AddGraph(setting))
+                foreach (var (id, graph) in setting.Graphs)
                 {
-                    throw new Exception($"Failed to instantiate graph : id {setting.Id}.");
+                    if (!env.AddGraph(id, graph))
+                    {
+                        throw new Exception($"Failed to instantiate graph : id {id}.");
+                    }
                 }
             }
 
-            foreach (var setting in json.Connections)
+            if (setting.Connections != null)
             {
-                if (!env.ConnectNode(setting))
+                foreach (var connStr in setting.Connections)
                 {
-                    throw new Exception(
-                        $"Failed to {(setting.Connect ? "dis" : "")}connect node : {setting.From} & {setting.To}.");
+                    if (!ExecutionSetting.TryParseConnection(connStr, out var node1, out var node2))
+                    {
+                        throw new Exception($"ParseError : when parsing connection setting.\nline : {connStr}");
+                    }
+
+                    if (!env.ConnectNode(node1, node2))
+                    {
+                        throw new Exception(
+                            $"Failed to connect node.\nline : {connStr}");
+                    }
                 }
             }
 
+            //TODO
+            /*
             foreach (var setting in json.Executions)
             {
                 await env.Execute(setting,PrintText);
@@ -117,6 +144,9 @@ namespace GraphRunner
                     }
                 }
             }
+            */
+
+            Console.WriteLine($"Loaded {filePath}.");
 
             return env;
         }
@@ -170,7 +200,6 @@ namespace GraphRunner
                     }
 
                     GraphSetting setting = new GraphSetting();
-                    setting.Id = id;
                     setting.Type = args[2];
                     setting.Setting = new Dictionary<string, string>();
 
@@ -187,7 +216,7 @@ namespace GraphRunner
                         }
                     }
 
-                    var result = env.AddGraph(setting);
+                    var result = env.AddGraph(id,setting);
                     if (result)
                     {
                         logger.WriteLine("OK. Created graph.");
@@ -243,10 +272,7 @@ namespace GraphRunner
                         continue;
                     }
 
-                    var setting = new Execution();
-                    setting.GraphId = id;
-
-                    var result = await env.Execute(setting, async (msg) =>
+                    var result = await env.Execute(id, async (msg) =>
                     {
                         await PrintText(msg);
                         return true;
@@ -324,11 +350,7 @@ namespace GraphRunner
                             continue;
                         }
 
-                        var setting = new BindSetting();
-                        setting.Path = path;
-                        setting.UpdaterId = updaterId;
-
-                        if (env.AddPath(setting))
+                        if (env.AddPath(path,updaterId))
                         {
                             logger.WriteLine($"OK. {path} -> Graph[{updaterId}]");
                         }
@@ -383,33 +405,39 @@ namespace GraphRunner
             }
 
 
-            if (!int.TryParse(args[1], out int id1) ||
-                !int.TryParse(args[2], out int nodeType1) ||
-                !int.TryParse(args[3], out int nodeIndex1) ||
-                !int.TryParse(args[4], out int id2) ||
-                !int.TryParse(args[5], out int nodeType2) ||
-                !int.TryParse(args[6], out int nodeIndex2))
+            if (!int.TryParse(args[1], out int graphId1) ||
+                !int.TryParse(args[2], out int typeInt1) ||
+                !int.TryParse(args[3], out int index1) ||
+                !int.TryParse(args[4], out int graphId2) ||
+                !int.TryParse(args[5], out int typeInt2) ||
+                !int.TryParse(args[6], out int index2))
             {
                 logger.WriteLine("int.ParseError");
                 return;
             }
 
-            var setting = new NodeConnection();
-            setting.Connect = connect;
-            setting.From = new NodeInfo();
-            setting.To = new NodeInfo();
+            var type1 = NodeData.IntToNodeType(typeInt1);
+            var type2 = NodeData.IntToNodeType(typeInt2);
 
-            setting.From.GraphId = id1;
-            setting.From.Type = nodeType1;
-            setting.From.Index = nodeIndex1;
-
-            setting.To.GraphId = id2;
-            setting.To.Type = nodeType2;
-            setting.To.Index = nodeIndex2;
+            if (type1 == NodeType.Undefined || type2 == NodeType.Undefined)
+            {
+                logger.WriteLine("NodeType Error.");
+                return;
+            }
 
             //TODO エラーの詳細
 
-            if (env.ConnectNode(setting))
+            if (env.ConnectNode(new NodeData
+            {
+                GraphId = graphId1,
+                NodeType = type1,
+                Index = index1
+            }, new NodeData
+            {
+                GraphId = graphId2,
+                NodeType = type2,
+                Index = index2
+            }))
             {
                 logger.WriteLine($"Ok. {(connect ? "Connected" : "Disconnected")} graph.");
             }
