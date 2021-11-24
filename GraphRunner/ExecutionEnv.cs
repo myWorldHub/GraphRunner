@@ -1,4 +1,3 @@
-#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -32,11 +31,49 @@ namespace GraphRunner
             IsServerRunning = false;
         }
 
+        public static ExecutionEnv FromSetting(ExecutionSetting setting)
+        {
+
+            var env = new ExecutionEnv();
+
+            if (setting.Graphs != null)
+            {
+                foreach (var (id, graph) in setting.Graphs)
+                {
+                    if (!env.AddGraph(id, graph))
+                    {
+                        Console.WriteLine($"Failed to instantiate graph : id {id}.");
+                        return new ExecutionEnv();
+                    }
+                }
+            }
+
+            if (setting.Connections != null)
+            {
+                foreach (var connStr in setting.Connections)
+                {
+                    if (!ExecutionSetting.TryParseConnection(connStr, out var node1, out var node2))
+                    {
+                        Console.WriteLine($"ParseError : when parsing connection setting.\nline : {connStr}");
+                        return new ExecutionEnv();
+                    }
+
+                    if (!env.ConnectNode(node1, node2))
+                    {
+                        Console.WriteLine($"Failed to connect node.\nline : {connStr}");
+                        return new ExecutionEnv();
+                    }
+                }
+            }
+
+            return env;
+        }
+
         public bool AddGraph(int id,GraphSetting setting)
         {
             if (_graphs.ContainsKey(id)) return false;
 
-            var graph = CreateGraph(setting);
+            var graph = setting.ToGraph(_connector);
 
             if (graph != null)
             {
@@ -297,33 +334,6 @@ namespace GraphRunner
                     return graph.InItemNodes.Count <= index ? null : graph.InItemNodes[index];
                 case NodeType.OutItem:
                     return graph.OutItemNodes.Count <= index ? null : graph.OutItemNodes[index];
-            }
-
-            return null;
-        }
-
-
-        private IGraph? CreateGraph(GraphSetting setting)
-        {
-            switch (setting.Type)
-            {
-                case "Updater":
-                    return new MyUpdateGraph(_connector, new SerialSender());
-                case "PrintText":
-                    return new MyDebugTextGraph(_connector);
-                case "Value":
-
-                    if (!(setting.Setting.ContainsKey("Type") &&
-                          setting.Setting.ContainsKey("Value")))
-                        return null;
-
-                    switch (setting.Setting["Type"])
-                    {
-                        case "Int":
-                            return new ValueGraph<int>(_connector, int.Parse(setting.Setting["Value"]));
-                    }
-
-                    break;
             }
 
             return null;

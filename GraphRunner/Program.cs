@@ -7,7 +7,7 @@ using GraphConnectEngine;
 
 namespace GraphRunner
 {
-    class Program
+    internal class Program
     {
         static async Task Main(string[] args)
         {
@@ -35,13 +35,15 @@ namespace GraphRunner
 
             if (args[0] == "run")
             {
+                logger.WriteLine("Bye");
+                /*
                 if (args.Length < 2)
                 {
                     logger.WriteLine("Usage : GraphRunner run :filePath");
                     return;
                 }
-
-                await Execute(args[1],true);
+                await Execute();
+                */
             }
             else if (args[0] == "i" || args[0] == "interactive")
             {
@@ -53,112 +55,44 @@ namespace GraphRunner
             }
         }
 
-        //TODO 状態表示コマンド / アクセスログ
-        static async Task<ExecutionEnv> Execute(string filePath,bool waitForServer)
+        private static ExecutionSetting GetExecutionSettingFromJson(string filePath)
         {
             string fileStr;
             try
             {
-                fileStr = await File.ReadAllTextAsync(filePath);
+                fileStr = File.ReadAllText(filePath);
+                var setting = JsonSerializer.Deserialize<ExecutionSetting>(fileStr);
+                return setting;
             }
-            catch(FileNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.WriteLine("File : " + filePath + " is not found.");
-                return new ExecutionEnv();
+                Console.WriteLine(ex.Message);
+                return null;
             }
-
-            ExecutionSetting setting;
-            try
-            {
-                setting = JsonSerializer.Deserialize<ExecutionSetting>(fileStr);
-            }
-            catch (JsonException ex)
-            {
-                throw new Exception("Failed to parse json.");
-                return new ExecutionEnv();
-            }
-
-            var env = new ExecutionEnv();
-
-            if (setting.Graphs != null)
-            {
-                foreach (var (id, graph) in setting.Graphs)
-                {
-                    if (!env.AddGraph(id, graph))
-                    {
-                        throw new Exception($"Failed to instantiate graph : id {id}.");
-                    }
-                }
-            }
-
-            if (setting.Connections != null)
-            {
-                foreach (var connStr in setting.Connections)
-                {
-                    if (!ExecutionSetting.TryParseConnection(connStr, out var node1, out var node2))
-                    {
-                        throw new Exception($"ParseError : when parsing connection setting.\nline : {connStr}");
-                    }
-
-                    if (!env.ConnectNode(node1, node2))
-                    {
-                        throw new Exception(
-                            $"Failed to connect node.\nline : {connStr}");
-                    }
-                }
-            }
-
-            //TODO
-            /*
-            foreach (var setting in json.Executions)
-            {
-                await env.Execute(setting,PrintText);
-            }
-
-            if (json.Server != null)
-            {
-                var result = env.StartServer(json.Server.Port);
-
-                if (!result)
-                {
-                    Console.WriteLine("Failed to start server.");
-                }
-                
-                foreach (var setting in json.Server.Bindings)
-                {
-                    env.AddPath(setting);
-                }
-
-                if (waitForServer)
-                {
-                    Console.WriteLine("Type \"quit\" to exit.");
-                    
-                    while (true)
-                    {
-                        var input = Console.ReadLine();
-                        if (string.IsNullOrEmpty(input)) continue;
-                        if (input == "quit")
-                        {
-                            break;
-                        }
-                    }
-                }
-            }
-            */
-
-            Console.WriteLine($"Loaded {filePath}.");
-
-            return env;
         }
 
         private static async Task StartInteractive(ILogger logger,string[] mainArgs)
         {
+            ExecutionEnv env;
             if (mainArgs.Length >= 2)
             {
                 logger.WriteLine("Loading {0}", mainArgs[1]);
+                var setting = GetExecutionSettingFromJson(mainArgs[1]);
+                if(setting == null)
+                {
+                    env = new ExecutionEnv();
+                    logger.WriteLine("Failed to load {0}", mainArgs[1]);
+                }
+                else
+                {
+                    env = ExecutionEnv.FromSetting(setting);
+                    logger.WriteLine("Loaded {0}", mainArgs[1]);
+                }
             }
-
-            ExecutionEnv env = mainArgs.Length >= 2 ? await Execute(mainArgs[1],false) : new ExecutionEnv();
+            else
+            {
+                env = new ExecutionEnv();
+            }
 
             while (true)
             {

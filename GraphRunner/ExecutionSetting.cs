@@ -19,8 +19,8 @@ namespace GraphRunner
                 return false;
             }
 
-            var infoStrs1 = nodeStrs[0].Split(",");
-            var infoStrs2 = nodeStrs[1].Split(",");
+            var infoStrs1 = nodeStrs[0].Split(":");
+            var infoStrs2 = nodeStrs[1].Split(":");
 
             if (infoStrs1.Length != 3 || infoStrs2.Length != 3)
             {
@@ -73,6 +73,11 @@ namespace GraphRunner
     {
         public string Type { get; set; }
         public Dictionary<string, string> Setting { get; set; }
+
+        internal object ToGraph()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 
     public class NodeData
