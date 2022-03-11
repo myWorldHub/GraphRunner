@@ -7,9 +7,13 @@
 ```
 $ graphrunner i
 > help # コマンドリストを表示する
+> creategraph # グラフを作る
+> remove # グラフを削除する
+> connect # ノードを繋ぐ
+> quit # 終了
 ```
 
-できることについては、helpで確認してください
+他のコマンドについては、helpで確認してください
 
 #### グラフとノード接続の定義が書かれたjsonを読み込んで実行する
 
@@ -21,8 +25,9 @@ https://github.com/nananapo/GraphRunner/blob/main/test.json
 graphrunner i fileName
 ```
 
-* アクセスされたらグラフ実行、結果を出力するhttpサーバーを建てられる
+#### アクセスされたらグラフ実行、結果を出力するhttpサーバーを建てられる
 
 ```
-起動したら、serverコマンドを使う
+> server start ポート番号 # サーバー起動
+> server bind パス グラフID # パスにアクセスされたとき、グラフを実行して結果を返す
 ```
